@@ -27,6 +27,7 @@ defmodule Parser.Mixfile do
     [
       {:tesla, "~> 0.7.1"},
       {:floki, "~> 0.17.0"},
+      {:trello, in_umbrella: true},
     ]
   end
 end
