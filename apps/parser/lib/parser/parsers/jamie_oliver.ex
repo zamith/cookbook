@@ -5,6 +5,9 @@ defmodule Parser.Parsers.JamieOliver do
     |> find_ingredients
     |> find_steps
     |> find_image_url
+    |> find_number_of_servings
+    |> find_cooking_time
+    |> find_dificulty
     |> write_description
     |> create_trello_card
     |> add_ingredients
@@ -52,18 +55,52 @@ defmodule Parser.Parsers.JamieOliver do
       |> List.first
       |> sanitize_url
 
-    IO.inspect image_url
-
     {html, %{recipe | image_url: image_url}}
   end
 
-  defp write_description({html, recipe = %Recipe{url: url}}) do
-    desc = """
-    [Original](#{url})
+  def find_number_of_servings({html, recipe = %Recipe{}}) do
+    number_of_servings =
+      html
+      |> Floki.find(".recipe-detail.serves")
+      |> List.first
+      |> elem(2)
+      |> List.last
+      |> String.trim
 
-    * **Serves:** 4-6
-    * **Cooks in:** 1h 30 min
-    * **Difficulty:** HARDISH
+    {html, %{recipe | number_of_servings: number_of_servings}}
+  end
+
+  def find_cooking_time({html, recipe = %Recipe{}}) do
+    cooking_time =
+      html
+      |> Floki.find(".recipe-detail.time")
+      |> List.first
+      |> elem(2)
+      |> List.last
+      |> String.trim
+
+    {html, %{recipe | cooking_time: cooking_time}}
+  end
+
+  def find_dificulty({html, recipe = %Recipe{}}) do
+    difficulty =
+      html
+      |> Floki.find(".recipe-detail.difficulty")
+      |> List.first
+      |> elem(2)
+      |> List.last
+      |> String.trim
+
+    {html, %{recipe | difficulty: difficulty}}
+  end
+
+  defp write_description({html, recipe = %Recipe{}}) do
+    desc = """
+    [Original](#{recipe.url})
+
+    * **Serves:** #{recipe.number_of_servings}
+    * **Cooks in:** #{recipe.cooking_time}
+    * **Difficulty:** #{recipe.difficulty}
     """
 
     {html, %{recipe | desc: desc}}
