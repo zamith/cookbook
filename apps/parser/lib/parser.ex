@@ -4,6 +4,6 @@ defmodule Parser do
   end
 
   defp select_parser(uri = %URI{host: "www.jamieoliver.com"}) do
-    uri |> URI.to_string |> Parser.Parsers.JamieOliver.parse
+    uri |> URI.to_string |> Parser.Runner.parse(Parser.Parsers.JamieOliver)
   end
 end

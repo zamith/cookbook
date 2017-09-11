@@ -1,22 +1,7 @@
 defmodule Parser.Parsers.JamieOliver do
-  def parse(url) do
-    {Tesla.get(url).body, %Recipe{url: url}}
-    |> find_title
-    |> find_ingredients
-    |> find_steps
-    |> find_image_url
-    |> find_number_of_servings
-    |> find_cooking_time
-    |> find_dificulty
-    |> write_description
-    |> create_trello_card
-    |> add_ingredients
-    |> add_method
-    |> add_image
-    :ok
-  end
+  @behaviour Parser.Parsers.Generic
 
-  defp find_title({html, recipe}) do
+  def find_title({html, recipe}) do
     title =
       html
       |> Floki.find("h1")
@@ -25,7 +10,7 @@ defmodule Parser.Parsers.JamieOliver do
     {html, %{recipe | title: title}}
   end
 
-  defp find_ingredients({html, recipe = %Recipe{}}) do
+  def find_ingredients({html, recipe = %Recipe{}}) do
     ingredients =
       html
       |> Floki.find(".ingred-list")
@@ -37,7 +22,7 @@ defmodule Parser.Parsers.JamieOliver do
     {html, %{recipe | ingredients: ingredients}}
   end
 
-  defp find_steps({html, recipe = %Recipe{}}) do
+  def find_steps({html, recipe = %Recipe{}}) do
     steps =
       html
       |> Floki.find(".recipeSteps li")
@@ -47,7 +32,7 @@ defmodule Parser.Parsers.JamieOliver do
     {html, %{recipe | steps: steps}}
   end
 
-  defp find_image_url({html, recipe = %Recipe{}}) do
+  def find_image_url({html, recipe = %Recipe{}}) do
     image_url =
       html
       |> Floki.find("picture img")
@@ -82,7 +67,7 @@ defmodule Parser.Parsers.JamieOliver do
     {html, %{recipe | cooking_time: cooking_time}}
   end
 
-  def find_dificulty({html, recipe = %Recipe{}}) do
+  def find_difficulty({html, recipe = %Recipe{}}) do
     difficulty =
       html
       |> Floki.find(".recipe-detail.difficulty")
@@ -92,45 +77,6 @@ defmodule Parser.Parsers.JamieOliver do
       |> String.trim
 
     {html, %{recipe | difficulty: difficulty}}
-  end
-
-  defp write_description({html, recipe = %Recipe{}}) do
-    desc = """
-    [Original](#{recipe.url})
-
-    * **Serves:** #{recipe.number_of_servings}
-    * **Cooks in:** #{recipe.cooking_time}
-    * **Difficulty:** #{recipe.difficulty}
-    """
-
-    {html, %{recipe | desc: desc}}
-  end
-
-  defp create_trello_card({_, recipe = %Recipe{}}) do
-    %{"id" => card_id} = Trello.create(
-      :card,
-      %Trello.Card{
-        name: recipe.title,
-        list_id: "593dce20e4ddfe11712214b4",
-        desc: recipe.desc,
-      }
-    )
-    {card_id, recipe}
-  end
-
-  defp add_ingredients({card_id, recipe = %Recipe{}}) do
-    Trello.create(:checklist, card_id, "Ingredients", recipe.ingredients)
-    {card_id, recipe}
-  end
-
-  defp add_method({card_id, recipe = %Recipe{}}) do
-    Trello.create(:checklist, card_id, "Method", recipe.steps)
-    {card_id, recipe}
-  end
-
-  defp add_image({card_id, recipe = %Recipe{}}) do
-    Trello.create(:attachment, card_id, recipe.image_url)
-    {card_id, recipe}
   end
 
   defp sanitize_url("//" <> url) do
